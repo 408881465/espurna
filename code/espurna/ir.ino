@@ -32,6 +32,7 @@ void _irProcessCode(unsigned long code) {
         code = last_code;
     }
 
+#if IR_BUTTON_SET != 0
     for (unsigned char i = 0; i < IR_BUTTON_COUNT ; i++) {
 
         unsigned long button_code = pgm_read_dword(&IR_BUTTON[i][0]);
@@ -90,7 +91,7 @@ void _irProcessCode(unsigned long code) {
 		}
 
 	}
-
+#endif
 	if (!found) {
 		DEBUG_MSG_P(PSTR("[IR] Ignoring code\n"));
 	}

@@ -209,7 +209,7 @@ PROGMEM const unsigned char magnitude_decimals[] = {
     0, 0, 0,
     0, 0, 0,
     0, 0, 3, 3,
-    4, 4 // Geiger Counter decimals
+    2, 4 // Geiger Counter decimals
 };
 
 PROGMEM const char magnitude_unknown_topic[] = "unknown";

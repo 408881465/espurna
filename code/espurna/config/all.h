@@ -19,9 +19,9 @@
 
 */
 
-#ifdef USE_CUSTOM_H
+//#ifdef USE_CUSTOM_H
 #include "custom.h"
-#endif
+//#endif
 
 #include "version.h"
 #include "types.h"
@@ -38,3 +38,23 @@
 #ifdef USE_CORE_VERSION_H
 #include "core_version.h"
 #endif
+
+// Redefine
+#define HEARTBEAT_REPORT_IP         0
+#define HEARTBEAT_REPORT_MAC        0
+#define HEARTBEAT_REPORT_RSSI       0
+#define HEARTBEAT_REPORT_UPTIME     0
+#define HEARTBEAT_REPORT_DATETIME   0
+#define HEARTBEAT_REPORT_FREEHEAP   0
+#define HEARTBEAT_REPORT_VCC        0
+#define HEARTBEAT_REPORT_HOSTNAME   0
+#define HEARTBEAT_REPORT_APP        0
+#define HEARTBEAT_REPORT_VERSION    0
+#define HEARTBEAT_REPORT_BOARD      0
+
+#define MQTT_STATUS_ONLINE          "online" 
+#define MQTT_STATUS_OFFLINE         "offline"
+
+#define SENSOR_DEBUG                1
+#define SENSOR_READ_INTERVAL        10
+#define SENSOR_REPORT_EVERY         6

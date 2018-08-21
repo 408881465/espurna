@@ -86,8 +86,16 @@ class DigitalSensor : public BaseSensor {
 
         // Current value for slot # index
         double value(unsigned char index) {
+        #ifdef DIGITAL_PIN_COUNT
+            uint8_t value = 0;
+            for (int i = 0; i < DIGITAL_PIN_COUNT; i++)
+                if (digitalRead(_gpio + i) == _default)
+                    value |= 1<<i;
+            return value;
+        #else
             if (index == 0) return (digitalRead(_gpio) == _default) ? 0 : 1;
             return 0;
+        #endif
         }
 
 
