@@ -101,7 +101,7 @@ void _mqttConnect() {
     _mqtt_user = strdup(getSetting("mqttUser", MQTT_USER).c_str());
     _mqtt_pass = strdup(getSetting("mqttPassword", MQTT_PASS).c_str());
     _mqtt_will = strdup(mqttTopic(MQTT_TOPIC_STATUS, false).c_str());
-    _mqtt_clientid = strdup(getSetting("mqttClientID", getIdentifier()).c_str());
+    _mqtt_clientid = strdup(getSetting("mqttClientID", getSetting("hostname")).c_str());
 
     DEBUG_MSG_P(PSTR("[MQTT] Connecting to broker at %s:%d\n"), host, port);
 
