@@ -48,48 +48,24 @@ void _irToMQTT() {
 #define IRbitsKey "IRBITS_" // bits  will be defined if a subject contains IRbitsKey followed by a value of 2 digits
 #define IRRptKey "RPT_" // repeats  will be defined if a subject contains IRRptKey followed by a value of 1 digit
 
-void _mqttToIR(char * topicOri, char * datacallback) {
+void _mqttToIR(char * payload) {
   
-  // IR DATA ANALYSIS    
-  //send received MQTT value by IR signal
-  boolean signalSent = false;
-  uint64_t data = 0;
-  String strcallback = String(datacallback);
-  //trc(datacallback);
-  int s = strcallback.length();
-  //number of "," value count
-  int count = 0;
-  for(int i = 0; i < s; i++)
-  {
-   if (datacallback[i] == ',') {
-    count++;
+    uint64_t data = 0;
+    String strcallback = String(payload);
+    int s = strcallback.length();
+    int count = 0;
+    for(int i = 0; i < s; i++)
+    {
+        if (payload[i] == ',')
+            count++;
     }
-  }
-  if(count == 0){
-    data = strtoul(datacallback, NULL, 10); // standard sending with unsigned long, we will not be able to pass values > 4294967295
-  }
+    if(count == 0){
+        data = strtoul(payload, NULL, 10); // standard sending with unsigned long, we will not be able to pass values > 4294967295
+    }
     
     //We look into the subject to see if a special Bits number is defined 
-  String topic = topicOri;
-  unsigned int valueBITS  = 0;
-  int pos = topic.lastIndexOf(IRbitsKey);       
-  if (pos != -1){
-    pos = pos + +strlen(IRbitsKey);
-    valueBITS = (topic.substring(pos,pos + 2)).toInt();
-    //trc(F("Bits nb:"));
-    //trc(valueBITS);
-  }
-  //We look into the subject to see if a special repeat number is defined 
-  uint16_t  valueRPT = 0;
-  int pos2 = topic.lastIndexOf(IRRptKey);
-  if (pos2 != -1) {
-    pos2 = pos2 + strlen(IRRptKey);
-    valueRPT = (topic.substring(pos2,pos2 + 1)).toInt();
-    //trc(F("IR repeat:"));
-    //trc(valueRPT);
-  }
-
-    if (valueBITS == 0) valueBITS = NEC_BITS;
+    unsigned int valueBITS  = 0;
+    uint16_t  valueRPT = NEC_BITS;
     irsend.sendNEC(data, valueBITS, valueRPT);
 
    //irrecv.enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
