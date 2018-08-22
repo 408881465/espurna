@@ -39,17 +39,21 @@ void _irToMQTT() {
 }
 #endif
 
-#ifndef MQTT_TO_IR
-#define MQTT_TO_IR 0
+#ifndef IR_FROM_MQTT
+#define IR_FROM_MQTT 0
 #endif
-#if MQTT_TO_IR
-  #include <IRsend.h>
-  IRsend irsend(3);
-#define IRbitsKey "IRBITS_" // bits  will be defined if a subject contains IRbitsKey followed by a value of 2 digits
-#define IRRptKey "RPT_" // repeats  will be defined if a subject contains IRRptKey followed by a value of 1 digit
+#ifndef IR_SEND_PIN
+#define IR_SEND_PIN 5
+#endif
+#if IR_FROM_MQTT
+#include <IRsend.h>
+IRsend *_ir_send;
+void _irFromMQTTCallback(unsigned int type, const char * topic, const char * payload) {
 
-void _mqttToIR(char * payload) {
-  
+    DEBUG_MSG_P(PSTR("MQTT %d: %s %s\n"), type, topic, payload);
+    if (type != MQTT_MESSAGE_EVENT) 
+        return;
+
     uint64_t data = 0;
     String strcallback = String(payload);
     int s = strcallback.length();
@@ -66,7 +70,7 @@ void _mqttToIR(char * payload) {
     //We look into the subject to see if a special Bits number is defined 
     unsigned int valueBITS  = 0;
     uint16_t  valueRPT = NEC_BITS;
-    irsend.sendNEC(data, valueBITS, valueRPT);
+    _ir_send->sendNEC(data, valueBITS, valueRPT);
 
    //irrecv.enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
 }
@@ -159,6 +163,11 @@ void irSetup() {
 
     _ir_recv = new IRrecv(IR_PIN);
     _ir_recv->enableIRIn();
+
+#if IR_FROM_MQTT
+    _ir_send = new IRsend(IR_SEND_PIN);
+    mqttRegister(_irFromMQTTCallback);
+#endif
 
     // Register loop
     espurnaRegisterLoop(irLoop);
