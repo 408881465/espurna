@@ -51,12 +51,23 @@ void _irToMQTT() {
 IRsend *_ir_send;
 void _irFromMQTTCallback(unsigned int type, const char * topic, const char * payload) {
 
-    DEBUG_MSG_P(PSTR("MQTT %d: %s %s\n"), type, topic, payload);
+    String t = mqttMagnitude((char *) topic);
+    DEBUG_MSG_P(PSTR("MQTT %d: %s %s=>%s\n"), type, topic, payload, t.c_str());
     if (type != MQTT_MESSAGE_EVENT) 
         return;
 
+    //if (t.startsWith("ir"))
+    if (!t.equals("ir")) {
+        return;
+    }
+
     char data[2048];
     int len = base64_decode_chars(payload, strlen(payload), data);
+    if (len < 2) {
+        DEBUG_MSG_P(PSTR("Invalid payload"));
+        return;
+    }
+
     _ir_send->sendRaw((uint16_t *)data, len/2, 38);
 
     _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
