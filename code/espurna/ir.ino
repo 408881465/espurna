@@ -24,18 +24,18 @@ unsigned long _ir_last_toggle = 0;
 #define IR_TO_MQTT 0
 #endif
 #if IR_TO_MQTT
+#define MQTT_TOPIC_IR "ir"
+#include <libb64/cencode.h>
 void _irToMQTT() {
     DEBUG_MSG_P(PSTR("decode_type: %d\n"), _ir_results.decode_type);
     DEBUG_MSG_P(PSTR("value: %08X\n"), _ir_results.value);
     DEBUG_MSG_P(PSTR("bits: %s\n"), String(_ir_results.bits).c_str());
 
-    String rawCode = "";
-    for (uint16_t i = 1;  i < _ir_results.rawlen;  i++) {
-        if (i % 100 == 0) yield();  // Preemptive yield every 100th entry to feed the WDT.
-        rawCode = rawCode + (_ir_results.rawbuf[i] * RAWTICK);
-        if ( i < _ir_results.rawlen-1 ) rawCode = rawCode + ","; // ',' not needed on last one
-    }
-    DEBUG_MSG_P(PSTR("rawbuf: %s\n"), rawCode.c_str());
+    char payload[4096];
+    base64_encode_chars((const char *)_ir_results.rawbuf, _ir_results.rawlen * RAWTICK, payload);
+
+    DEBUG_MSG_P(PSTR("rawbuf: %s\n"), payload);
+    mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
 }
 #endif
 
@@ -47,6 +47,7 @@ void _irToMQTT() {
 #endif
 #if IR_FROM_MQTT
 #include <IRsend.h>
+#include <libb64/cdecode.h>
 IRsend *_ir_send;
 void _irFromMQTTCallback(unsigned int type, const char * topic, const char * payload) {
 
@@ -54,25 +55,11 @@ void _irFromMQTTCallback(unsigned int type, const char * topic, const char * pay
     if (type != MQTT_MESSAGE_EVENT) 
         return;
 
-    uint64_t data = 0;
-    String strcallback = String(payload);
-    int s = strcallback.length();
-    int count = 0;
-    for(int i = 0; i < s; i++)
-    {
-        if (payload[i] == ',')
-            count++;
-    }
-    if(count == 0){
-        data = strtoul(payload, NULL, 10); // standard sending with unsigned long, we will not be able to pass values > 4294967295
-    }
-    
-    //We look into the subject to see if a special Bits number is defined 
-    unsigned int valueBITS  = 0;
-    uint16_t  valueRPT = NEC_BITS;
-    _ir_send->sendNEC(data, valueBITS, valueRPT);
+    char data[2048];
+    int len = base64_decode_chars(payload, strlen(payload), data);
+    _ir_send->sendRaw((uint16_t *)data, len/2, 38);
 
-   //irrecv.enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
+    _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
 }
 #endif
 
