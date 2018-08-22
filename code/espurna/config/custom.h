@@ -48,12 +48,15 @@
 #define SONOFF_ID                   0
 #define HASSMART_ID                 0
 
+#define MAKE_STRING(e)              #e
+#define MAKE_HOSTNAME(a, b)         MAKE_STRING(a) MAKE_STRING(b)
+
 #if NODEMCU_ID
-    #define HOSTNAME                "NodeMCU"
+    #define HOSTNAME                MAKE_HOSTNAME(NodeMCU, NODEMCU_ID)
 #elif SONOFF_ID
-    #define HOSTNAME                "Sonoff"
+    #define HOSTNAME                MAKE_HOSTNAME(Sonoff, SONOFF_ID)
 #elif HASSMART_ID
-    #define HOSTNAME                "Hassmart"
+    #define HOSTNAME                MAKE_HOSTNAME(Hassmart, HASSMART_ID)
 #endif
 
 #if NODEMCU_ID == 1
