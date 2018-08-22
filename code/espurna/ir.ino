@@ -33,13 +33,11 @@ void _irToMQTT() {
     DEBUG_MSG_P(PSTR("rawlen: %d\n"), _ir_results.rawlen);
 
     int size = _ir_results.rawlen * RAWTICK;
-    char *payload = (char *)malloc(size * 4 / 3 + 16);
-    int len = base64_encode_chars((const char *)_ir_results.rawbuf, size, payload);
-    payload[len] = 0;
-    free(payload);
-
+    char *payload = (char *)malloc(size * 2 + 16);
+    base64_encode_chars((const char *)_ir_results.rawbuf, size, payload);
     DEBUG_MSG_P(PSTR("rawbuf: %s\n"), payload);
     //mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
+    free(payload);
 }
 #endif
 
