@@ -28,14 +28,18 @@ unsigned long _ir_last_toggle = 0;
 #include <libb64/cencode.h>
 void _irToMQTT() {
     DEBUG_MSG_P(PSTR("decode_type: %d\n"), _ir_results.decode_type);
-    DEBUG_MSG_P(PSTR("value: %08X\n"), _ir_results.value);
-    DEBUG_MSG_P(PSTR("bits: %s\n"), String(_ir_results.bits).c_str());
+    DEBUG_MSG_P(PSTR("bits: %d\n"), _ir_results.bits);
+    DEBUG_MSG_P(PSTR("value: %06X\n"), _ir_results.value);
+    DEBUG_MSG_P(PSTR("rawlen: %d\n"), _ir_results.rawlen);
 
-    char payload[4096];
-    base64_encode_chars((const char *)_ir_results.rawbuf, _ir_results.rawlen * RAWTICK, payload);
+    int size = _ir_results.rawlen * RAWTICK;
+    char *payload = (char *)malloc(size * 4 / 3 + 16);
+    int len = base64_encode_chars((const char *)_ir_results.rawbuf, size, payload);
+    payload[len] = 0;
+    free(payload);
 
     DEBUG_MSG_P(PSTR("rawbuf: %s\n"), payload);
-    mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
+    //mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
 }
 #endif
 
@@ -61,16 +65,18 @@ void _irFromMQTTCallback(unsigned int type, const char * topic, const char * pay
         return;
     }
 
-    char data[2048];
-    int len = base64_decode_chars(payload, strlen(payload), data);
+    int len = strlen(payload);
+    char *data = malloc(len * 3 / 4 + 16);
+    int len = base64_decode_chars(payload, len, data);
     if (len < 2) {
         DEBUG_MSG_P(PSTR("Invalid payload"));
+        free(data);
         return;
+    } else {
+        _ir_send->sendRaw((uint16_t *)data, len/2, 38);
+        _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
     }
-
-    _ir_send->sendRaw((uint16_t *)data, len/2, 38);
-
-    _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
+    free(data);
 }
 #endif
 

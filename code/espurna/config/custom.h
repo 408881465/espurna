@@ -62,7 +62,7 @@
 #if NODEMCU_ID == 1
     #define IR_SUPPORT              1
     #define IR_TO_MQTT              1
-    #define IR_FROM_MQTT            1
+    //#define IR_FROM_MQTT            1
 #elif NODEMCU_ID == 2
     #define PMSX003_SUPPORT         1
     #define PMS_TYPE                PMS_TYPE_5003T
