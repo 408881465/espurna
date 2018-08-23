@@ -28,7 +28,7 @@ unsigned long _ir_last_toggle = 0;
 #include <libb64/cencode.h>
 #include <base64.h>
 void _irToMQTT() {
-    DEBUG_MSG_P(PSTR("[IR] type: %d, bits: %d, value: %08X, rawlen: %d\n"), _ir_results.decode_type, _ir_results.bits, _ir_results.value, _ir_results.rawlen);
+    DEBUG_MSG_P(PSTR("[IR] decode_type: %d, bits: %d, value: %016llX, rawlen: %d\n"), (int)_ir_results.decode_type, (int)_ir_results.bits, _ir_results.value, (int)_ir_results.rawlen);
 
     int size = _ir_results.rawlen * RAWTICK;
     char *payload = (char *)malloc(size * 97 / 72 + 16);
