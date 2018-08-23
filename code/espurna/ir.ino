@@ -26,17 +26,21 @@ unsigned long _ir_last_toggle = 0;
 #if IR_TO_MQTT
 #define MQTT_TOPIC_IR "ir"
 #include <libb64/cencode.h>
+#include <base64.h>
 void _irToMQTT() {
-    DEBUG_MSG_P(PSTR("decode_type: %d\n"), _ir_results.decode_type);
-    DEBUG_MSG_P(PSTR("bits: %d\n"), _ir_results.bits);
-    DEBUG_MSG_P(PSTR("value: %06X\n"), _ir_results.value);
-    DEBUG_MSG_P(PSTR("rawlen: %d\n"), _ir_results.rawlen);
+    DEBUG_MSG_P(PSTR("[IR] type: %d, bits: %d, value: %08X, rawlen: %d\n"), _ir_results.decode_type, _ir_results.bits, _ir_results.value, _ir_results.rawlen);
 
     int size = _ir_results.rawlen * RAWTICK;
-    char *payload = (char *)malloc(size * 4 / 3 + 16);
+    char *payload = (char *)malloc(size * 97 / 72 + 16);
     base64_encode_chars((const char *)_ir_results.rawbuf, size, payload);
-    DEBUG_MSG_P(PSTR("rawbuf: %s\n"), payload);
-    //mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
+    char *last = payload;
+    for (char *p = payload; *p; p++) {
+        if (*p != '\n')
+            *last++ = *p;
+    }
+    *last = 0;
+    DEBUG_MSG_P(PSTR("[IR] rawbuf: %s\n"), payload);
+    mqttSend(MQTT_TOPIC_IR, _ir_results.decode_type, payload);
     free(payload);
 }
 #endif
@@ -51,30 +55,31 @@ void _irToMQTT() {
 #include <IRsend.h>
 #include <libb64/cdecode.h>
 IRsend *_ir_send;
+#define MQTT_TOPIC_IR "ir"
 void _irFromMQTTCallback(unsigned int type, const char * topic, const char * payload) {
+   if (type == MQTT_CONNECT_EVENT) {
+        mqttSubscribe(MQTT_TOPIC_IR "/+");
+    } else  if (type == MQTT_MESSAGE_EVENT) {
+        String t = mqttMagnitude((char *) topic);
+        if (!t.startsWith("ir")) {
+            return;
+        }
 
-    String t = mqttMagnitude((char *) topic);
-    DEBUG_MSG_P(PSTR("MQTT %d: %s %s=>%s\n"), type, topic, payload, t.c_str());
-    if (type != MQTT_MESSAGE_EVENT) 
-        return;
-
-    //if (t.startsWith("ir"))
-    if (!t.equals("ir")) {
-        return;
-    }
-
-    int len = strlen(payload);
-    char *data = (char *)malloc(len * 3 / 4 + 16);
-    int size = base64_decode_chars(payload, len, data);
-    if (size < 2) {
-        DEBUG_MSG_P(PSTR("Invalid payload"));
+        DEBUG_MSG_P(PSTR("[IR] %s=>%s\n"), topic, payload);
+        int len = strlen(payload);
+        char *data = (char *)malloc(len * 3 / 4 + 16);
+        int size = base64_decode_chars(payload, len, data);
+        if (size < 2) {
+            DEBUG_MSG_P(PSTR("[IR] Invalid payload"));
+            free(data);
+            return;
+        } else {
+            DEBUG_MSG_P(PSTR("[IR] payload: %d bytes\n"), size);
+            _ir_send->sendRaw((uint16_t *)data, size/2, 38);
+            _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
+        }
         free(data);
-        return;
-    } else {
-        _ir_send->sendRaw((uint16_t *)data, size/2, 38);
-        _ir_recv->enableIRIn(); // ReStart the IR receiver (if not restarted it is not able to receive data)
     }
-    free(data);
 }
 #endif
 
